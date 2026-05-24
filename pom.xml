@@ -74,11 +74,8 @@
 		</dependency>
 
 		<!-- OpenAPI / Swagger UI -->
-		<dependency>
-			<groupId>org.springdoc</groupId>
-			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.1.0</version>
-		</dependency>
+		<!-- Swagger/OpenAPI UI disabled due to HATEOAS compatibility with Spring Boot 3.5.x
+		Remove this block if you add a compatible springdoc version. -->
 
 
 	</dependencies>
