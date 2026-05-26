@@ -1,5 +1,8 @@
 package pl.polsl.take.firmakurierska.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
@@ -7,8 +10,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.hateoas.CollectionModel;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,15 +22,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import pl.polsl.take.firmakurierska.dto.PaczkaModel;
 import pl.polsl.take.firmakurierska.dto.TrasaCreateRequest;
 import pl.polsl.take.firmakurierska.dto.TrasaModel;
 import pl.polsl.take.firmakurierska.dto.TrasaUpdateRequest;
 import pl.polsl.take.firmakurierska.entity.Kurier;
+import pl.polsl.take.firmakurierska.entity.Paczka;
 import pl.polsl.take.firmakurierska.entity.Samochod;
 import pl.polsl.take.firmakurierska.entity.Trasa;
 import pl.polsl.take.firmakurierska.exception.ResourceNotFoundException;
+import pl.polsl.take.firmakurierska.hateoas.PaczkaModelAssembler;
 import pl.polsl.take.firmakurierska.hateoas.TrasaModelAssembler;
 import pl.polsl.take.firmakurierska.repository.KurierRepository;
+import pl.polsl.take.firmakurierska.repository.PaczkaRepository;
 import pl.polsl.take.firmakurierska.repository.SamochodRepository;
 import pl.polsl.take.firmakurierska.repository.TrasaRepository;
 
@@ -41,25 +46,33 @@ public class TrasaController {
     private final SamochodRepository samochodRepository;
     private final KurierRepository kurierRepository;
     private final TrasaModelAssembler assembler;
+    private final PaczkaRepository paczkaRepository;
+    private final PaczkaModelAssembler paczkaModelAssembler;
 
     public TrasaController(
             TrasaRepository trasaRepository,
             SamochodRepository samochodRepository,
             KurierRepository kurierRepository,
-            TrasaModelAssembler assembler) {
+            TrasaModelAssembler assembler,
+            PaczkaRepository paczkaRepository,
+            PaczkaModelAssembler paczkaModelAssembler) {
         this.trasaRepository = trasaRepository;
         this.samochodRepository = samochodRepository;
         this.kurierRepository = kurierRepository;
         this.assembler = assembler;
-    }
-
+        this.paczkaRepository = paczkaRepository;
+        this.paczkaModelAssembler = paczkaModelAssembler;
+        }
     @GetMapping
     public CollectionModel<TrasaModel> getTrasy(
             @RequestParam(name = "samochodId", required = false) Long samochodId,
-            @RequestParam(name = "data", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+            @RequestParam(name = "data", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
+            @RequestParam(name = "rejon", required = false) String rejon) {
         List<Trasa> list;
 
-        if (samochodId != null && data != null) {
+        if (rejon != null && !rejon.isBlank()) {
+            list = trasaRepository.findByRejonIgnoreCase(rejon);
+        } else if (samochodId != null && data != null) {
             list = trasaRepository.findByPrzypisanySamochod_IdAndDataWyjazdu(samochodId, data);
         } else if (samochodId != null) {
             list = trasaRepository.findByPrzypisanySamochod_Id(samochodId);
@@ -73,7 +86,7 @@ public class TrasaController {
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
 
-        return CollectionModel.of(models, linkTo(methodOn(TrasaController.class).getTrasy(samochodId, data)).withSelfRel());
+        return CollectionModel.of(models, linkTo(methodOn(TrasaController.class).getTrasy(samochodId, data, rejon)).withSelfRel());
     }
 
     @GetMapping("/{id}")
@@ -81,6 +94,15 @@ public class TrasaController {
         Trasa trasa = trasaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Trasa not found: " + id));
         return assembler.toModel(trasa);
+    }
+    
+    @GetMapping("/{id}/paczki")
+    public CollectionModel<PaczkaModel> getPaczkiTrasy(@PathVariable Long id) {
+        trasaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Trasa not found: " + id));
+        List<Paczka> paczki = paczkaRepository.findByAktualnaTrasa_Id(id);
+        return paczkaModelAssembler.toCollectionModel(paczki)
+                .add(linkTo(methodOn(TrasaController.class).getPaczkiTrasy(id)).withSelfRel());
     }
 
     @PostMapping

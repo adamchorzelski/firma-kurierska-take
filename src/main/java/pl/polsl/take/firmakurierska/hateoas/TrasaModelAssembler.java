@@ -28,11 +28,11 @@ public class TrasaModelAssembler implements RepresentationModelAssembler<Trasa, 
                 kierowcaId);
 
         model.add(linkTo(methodOn(TrasaController.class).getById(entity.getId())).withSelfRel());
-        model.add(linkTo(methodOn(TrasaController.class).getTrasy(null, null)).withRel("trasy"));
+        model.add(linkTo(methodOn(TrasaController.class).getTrasy(null, null, null)).withRel("trasy"));
 
         if (samochodId != null) {
             model.add(linkTo(methodOn(SamochodController.class).getById(samochodId)).withRel("samochod"));
-            model.add(linkTo(methodOn(TrasaController.class).getTrasy(samochodId, null)).withRel("trasySamochodu"));
+            model.add(linkTo(methodOn(TrasaController.class).getTrasy(samochodId, null, null)).withRel("trasySamochodu"));
         }
 
         return model;

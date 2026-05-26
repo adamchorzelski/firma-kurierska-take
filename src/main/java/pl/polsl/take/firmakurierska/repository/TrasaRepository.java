@@ -14,5 +14,9 @@ public interface TrasaRepository extends JpaRepository<Trasa, Long> {
 	List<Trasa> findByDataWyjazdu(LocalDate dataWyjazdu);
 
 	List<Trasa> findByPrzypisanySamochod_IdAndDataWyjazdu(Long samochodId, LocalDate dataWyjazdu);
+	
+	List<Trasa> findByRejonIgnoreCase(String rejon);
+	
+	List<Trasa> findByKierowca_Id(Long kierowcaId);
 
 }

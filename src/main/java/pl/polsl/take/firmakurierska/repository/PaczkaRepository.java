@@ -9,4 +9,6 @@ import pl.polsl.take.firmakurierska.entity.StatusPaczki;
 
 public interface PaczkaRepository extends JpaRepository<Paczka, Long> {
     List<Paczka> findByStatus(StatusPaczki status);
+    List<Paczka> findByNadawca_IdOrOdbiorca_Id(Long nadawcaId, Long odbiorcaId);
+    List<Paczka> findByAktualnaTrasa_Id(Long trasaId);
 }

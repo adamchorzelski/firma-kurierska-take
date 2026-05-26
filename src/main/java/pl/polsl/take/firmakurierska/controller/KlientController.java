@@ -1,8 +1,9 @@
 package pl.polsl.take.firmakurierska.controller;
 
-import java.util.List;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
-import jakarta.validation.Valid;
+import java.util.List;
 
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
@@ -20,17 +21,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import pl.polsl.take.firmakurierska.dto.KlientCreateRequest;
 import pl.polsl.take.firmakurierska.dto.KlientModel;
 import pl.polsl.take.firmakurierska.dto.KlientUpdateRequest;
+import pl.polsl.take.firmakurierska.dto.PaczkaModel;
 import pl.polsl.take.firmakurierska.entity.Klient;
+import pl.polsl.take.firmakurierska.entity.Paczka;
 import pl.polsl.take.firmakurierska.exception.ResourceNotFoundException;
 import pl.polsl.take.firmakurierska.hateoas.KlientModelAssembler;
+import pl.polsl.take.firmakurierska.hateoas.PaczkaModelAssembler;
 import pl.polsl.take.firmakurierska.repository.KlientRepository;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+import pl.polsl.take.firmakurierska.repository.PaczkaRepository;
 
 @RestController
 @RequestMapping("/klienci")
@@ -38,8 +41,10 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @Tag(name = "Klienci")
 public class KlientController {
 
-    private final KlientRepository klientRepository;
+	private final KlientRepository klientRepository;
     private final KlientModelAssembler klientModelAssembler;
+    private final PaczkaRepository paczkaRepository;
+    private final PaczkaModelAssembler paczkaModelAssembler;
 
     @GetMapping
     @Operation(summary = "Pobierz wszystkich klientów", description = "Zwraca listę wszystkich klientów. Możliwe filtrowanie po nazwisku.")
@@ -61,6 +66,17 @@ public class KlientController {
         Klient klient = klientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono klienta o ID: " + id));
         return klientModelAssembler.toModel(klient);
+    }
+    
+    @GetMapping("/{id}/paczki")
+    @Operation(summary = "Pobierz paczki klienta", description = "Zwraca wszystkie paczki, w których klient jest nadawcą lub odbiorcą.")
+    public CollectionModel<PaczkaModel> getPaczkiKlienta(@PathVariable Long id) {
+        klientRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono klienta o ID: " + id));
+        List<Paczka> paczki = paczkaRepository.findByNadawca_IdOrOdbiorca_Id(id, id);
+        CollectionModel<PaczkaModel> collectionModel = paczkaModelAssembler.toCollectionModel(paczki);
+        collectionModel.add(linkTo(methodOn(KlientController.class).getPaczkiKlienta(id)).withSelfRel());
+        return collectionModel;
     }
 
     @PostMapping

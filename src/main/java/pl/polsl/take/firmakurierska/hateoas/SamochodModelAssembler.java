@@ -18,7 +18,7 @@ public class SamochodModelAssembler implements RepresentationModelAssembler<Samo
 
         model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SamochodController.class).getById(entity.getId())).withSelfRel());
         model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SamochodController.class).getAll()).withRel("samochody"));
-        model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(TrasaController.class).getTrasy(entity.getId(), null)).withRel("trasy"));
+        model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(TrasaController.class).getTrasy(entity.getId(), null, null)).withRel("trasy"));
 
         return model;
     }
